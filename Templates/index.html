@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fake News Detector</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+
+        :root{
+            --primary:#6a11cb;
+            --primary-dark:#4b0fa8;
+            --bg1: linear-gradient(120deg, #6a11cb, #2575fc);
+        }
+
+        html,body{
+            height:100%;
+            margin:0;
+            font-family:"Poppins",sans-serif;
+            background: var(--bg1);
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+        }
+
+        .wrap {
+            min-height:100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:24px;
+            box-sizing:border-box;
+        }
+
+        .card {
+            width:100%;
+            max-width:560px;
+            background:#fff;
+            border-radius:14px;
+            padding:28px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+            text-align:center;
+            animation:pop 0.5s ease;
+        }
+
+        @keyframes pop {
+            from {
+                opacity:0;
+                transform:translateY(12px) scale(0.99);
+            }
+
+            to {
+                opacity:1;
+                transform:translateY(0) scale(1);
+            }
+        }
+
+        h1{
+            margin:0 0 14px;
+            font-size:20px;
+            color:#222;
+            font-weight:600;
+        }
+
+        p.subtitle {
+            margin:0 0 18px;
+            color:#666;
+            font-size:14px;
+        }
+
+        textarea{
+            width:100%;
+            min-height:160px;
+            max-height:360px;
+            padding:14px;
+            box-sizing:border-box;
+            border-radius:10px;
+            border:1px solid #e6e6e6;
+            resize:vertical;
+            font-size:15px;
+            outline:none;
+            transition:box-shadow .18s ease, border-color .18s ease;
+        }
+
+        textarea:focus{
+            border-color:var(--primary);
+            box-shadow:0 8px 20px rgba(106,17,203,0.12);
+        }
+
+        .controls {
+            display:flex;
+            gap:12px;
+            margin-top:14px;
+        }
+
+        .btn {
+            flex:1;
+            padding:12px 14px;
+            border-radius:10px;
+            border:0;
+            background:var(--primary);
+            color:#fff;
+            font-weight:600;
+            cursor:pointer;
+            transition:background .15s ease, transform .06s ease;
+        }
+
+        .btn:hover{
+            background:var(--primary-dark);
+            transform:translateY(-1px);
+        }
+
+        .btn.secondary {
+            background:#f5f5f5;
+            color:#333;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.03);
+        }
+
+        .result {
+            margin-top:18px;
+            padding:14px;
+            border-radius:10px;
+            font-weight:700;
+            font-size:16px;
+            display:inline-block;
+            min-width:180px;
+        }
+
+        .fake {
+            background: #ffe9e9;
+            color:#d62828;
+            border:1px solid rgba(214,40,40,0.08);
+        }
+
+        .real {
+            background: #e9fff5;
+            color:#0b8a55;
+            border:1px solid rgba(11,138,85,0.08);
+        }
+
+        .entered-text-box {
+            background:#f0f0f0;
+            padding:12px;
+            border-radius:10px;
+            margin-top:12px;
+            color:#333;
+            font-size:14px;
+            text-align:left;
+            white-space:pre-wrap;
+        }
+
+        .hint {
+            margin-top:12px;
+            color:#777;
+            font-size:13px;
+        }
+
+        /* Prediction History */
+
+        .history-box{
+            margin-top:25px;
+            text-align:left;
+        }
+
+        .history-title{
+            font-size:18px;
+            font-weight:600;
+            margin-bottom:12px;
+            color:#222;
+        }
+
+        .history-item{
+            background:#f7f7f7;
+            padding:12px;
+            border-radius:10px;
+            margin-bottom:10px;
+            font-size:14px;
+            border-left:4px solid var(--primary);
+        }
+
+        .history-label{
+            font-weight:600;
+            color:#333;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+    <div class="card" role="main">
+
+        <h1>📰 Fake News Detector</h1>
+
+        <p class="subtitle">
+            Paste a news snippet below and press <strong>Check</strong>.
+        </p>
+
+        <form id="newsForm" method="POST" action="/predict" autocomplete="off">
+
+            <textarea
+                id="newsText"
+                name="news"
+                placeholder="Type or paste news text here..."
+            ></textarea>
+
+            <div class="controls">
+
+                <button id="checkBtn" class="btn" type="submit">
+                    Check
+                </button>
+
+                <button id="clearBtn" class="btn secondary" type="button">
+                    Clear
+                </button>
+
+                <button id="historyBtn" class="btn secondary" type="button">
+                    History
+                </button>
+
+            </div>
+
+        </form>
+
+        <!-- Prediction Result -->
+
+        <div id="predictionArea">
+
+            {% if prediction is not none %}
+
+                <p><strong>News Entered:</strong></p>
+
+                <div class="entered-text-box">
+                    {{ user_text }}
+                </div>
+
+                {% if "FAKE" in prediction %}
+
+                    <div class="result fake">
+                        {{ prediction }}
+                    </div>
+
+                {% else %}
+
+                    <div class="result real">
+                        {{ prediction }}
+                    </div>
+
+                {% endif %}
+
+            {% endif %}
+
+        </div>
+
+        <!-- Prediction History -->
+
+        <div
+            class="history-box"
+            id="historySection"
+            style="display:none;"
+        >
+
+            <div class="history-title">
+                Prediction History
+            </div>
+
+            {% if history %}
+
+                {% for item in history[:5] %}
+
+                <div class="history-item">
+
+                    <div>
+                        <span class="history-label">News:</span>
+                        {{ item[0] }}
+                    </div>
+
+                    <br>
+
+                    <div>
+                        <span class="history-label">Prediction:</span>
+                        {{ item[1] }}
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="history-item">
+                    No prediction history available yet.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+        <div class="hint">
+            Tip: Submit empty text will not show any result.
+            Clearing the box will also hide previous results immediately.
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const newsText = document.getElementById('newsText');
+    const predictionArea = document.getElementById('predictionArea');
+    const clearBtn = document.getElementById('clearBtn');
+    const newsForm = document.getElementById('newsForm');
+
+    const historyBtn = document.getElementById('historyBtn');
+    const historySection = document.getElementById('historySection');
+
+    // Toggle Prediction History
+
+    historyBtn.addEventListener('click', () => {
+
+        if (historySection.style.display === "none") {
+
+            historySection.style.display = "block";
+
+        } else {
+
+            historySection.style.display = "none";
+
+        }
+
+    });
+
+    // Remove prediction when textarea is empty
+
+    newsText.addEventListener('input', () => {
+
+        if (newsText.value.trim() === "") {
+
+            predictionArea.innerHTML = "";
+
+        }
+
+    });
+
+    // Clear button functionality
+
+    clearBtn.addEventListener('click', () => {
+
+        newsText.value = "";
+        predictionArea.innerHTML = "";
+        newsText.focus();
+
+    });
+
+    // Prevent empty submission
+
+    newsForm.addEventListener('submit', (e) => {
+
+        if (newsText.value.trim() === "") {
+
+            e.preventDefault();
+            predictionArea.innerHTML = "";
+
+        }
+
+    });
+
+</script>
+
+</body>
+</html>
