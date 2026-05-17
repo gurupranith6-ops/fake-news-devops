@@ -24,7 +24,9 @@ pipeline {
         }
 
         stage('Test Application') {
-            steps {
+           
+             steps {
+                sh 'sleep 15'
                 sh 'curl http://localhost:5000'
             }
         }
