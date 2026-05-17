@@ -5,7 +5,7 @@ pipeline {
 
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/gurupranith6-ops/fake-news-devops.git'
+                git branch: 'main', url: 'https://github.com/gurupranith6-ops/fake-news-devops.git'
             }
         }
 
